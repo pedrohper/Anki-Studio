@@ -1,0 +1,4 @@
+allowBuilds:
+  msedge-tts: false
+  sharp: false
+  unrs-resolver: false
