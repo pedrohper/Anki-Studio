@@ -1,37 +1,43 @@
-# Ambientes Virtuais Python
-.venv/
-venv/
-env/
-ENV/
+# dependências
+/node_modules
+/.pnp
+.pnp.*
 
-# Variáveis de Ambiente e Segredos
-.env
-*.pem
-*.key
+# Next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
 
-# Arquivos de Banco de Dados e Dados Locais
-*.db
-*.sqlite
-*.sqlite3
-data/*.db
-data/*.sqlite
+# testes
+/coverage
+/playwright-report
+/test-results
+/blob-report
 
-# Mídias e Baralhos Exportados
+# variáveis de ambiente (nunca suba chaves)
+.env*
+!.env.example
+
+# dados locais do app antigo e baralhos exportados
+/data/
 *.apkg
-data/*.apkg
-data/*.mp3
+*.db
 
-# Compilados e Caches do Python
-__pycache__/
-*.py[cod]
-*$py.class
+# ambiente Python antigo, se ainda existir na máquina
+.venv/
 
-# Configurações de IDEs e Editores
-.vscode/
+# editores e sistema
+.vscode/*
+!.vscode/extensions.json
 .idea/
-.project
-.settings/
-
-# Arquivos do Sistema Operacional
 .DS_Store
 Thumbs.db
+*.lnk
+.vercel
+npm-debug.log*
+.pnpm-debug.log*
+
+# Arquivos temporários do assistente
+/Claude outputs/
