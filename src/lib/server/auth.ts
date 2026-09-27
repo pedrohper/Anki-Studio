@@ -1,13 +1,13 @@
 /**
- * Senha do app (APP_PASSWORD) para quando ele fica acessível fora de casa.
- * Sem banco de dados: o cookie guarda um HMAC derivado da senha. Trocar a
- * senha no .env derruba todas as sessões antigas.
+ * Sessões do Anki Studio protegido por PIN (ver access-store.ts).
+ * Sem banco de dados: o cookie guarda um HMAC feito com o segredo salvo junto
+ * do PIN. Trocar ou remover o PIN troca o segredo e derruba todas as sessões.
  *
  * Usa só Web Crypto, então funciona tanto no proxy quanto nas rotas.
  */
 
 export const AUTH_COOKIE = "anki_studio_sessao";
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 dias
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 90; // 90 dias
 
 const encoder = new TextEncoder();
 
@@ -31,19 +31,13 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function sessionToken(password: string): Promise<string> {
-  return hmac(password, "anki-studio:sessao:v1");
+export function sessionToken(secret: string): Promise<string> {
+  return hmac(secret, "anki-studio:sessao:v1");
 }
 
-export async function isValidSession(cookie: string | undefined, password: string): Promise<boolean> {
+export async function isValidSession(cookie: string | undefined, secret: string): Promise<boolean> {
   if (!cookie) return false;
-  return safeEqual(cookie, await sessionToken(password));
-}
-
-/** Compara as senhas via HMAC para não vazar o tamanho nem o conteúdo pelo tempo de resposta. */
-export async function passwordMatches(attempt: string, password: string): Promise<boolean> {
-  const [a, b] = await Promise.all([hmac("anki-studio:login", attempt), hmac("anki-studio:login", password)]);
-  return safeEqual(a, b);
+  return safeEqual(cookie, await sessionToken(secret));
 }
 
 /** Caminhos liberados sem login: a tela de entrar, a API de login e os arquivos do ícone/PWA. */

@@ -126,6 +126,20 @@ export const appConfigSchema = z.object({
   lanAccess: z.boolean().default(false),
 });
 
+export const tunnelSnapshotSchema = z.object({
+  status: z.enum(["off", "installing", "starting", "on", "error"]),
+  url: z.string().nullable(),
+  error: z.string().nullable(),
+});
+export type TunnelSnapshot = z.infer<typeof tunnelSnapshotSchema>;
+
+export const accessStatusSchema = z.object({
+  pinSet: z.boolean(),
+  manageable: z.boolean(),
+  tunnel: tunnelSnapshotSchema,
+});
+export type AccessStatus = z.infer<typeof accessStatusSchema>;
+
 export const lanAddressesSchema = z.object({
   addresses: z.array(z.object({ ip: z.string(), url: z.string(), label: z.string() })),
 });
