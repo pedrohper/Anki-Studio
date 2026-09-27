@@ -1,8 +1,8 @@
 /*
  * Service worker do Anki Studio.
- * Faz só uma coisa: recebe o que você compartilha pelo celular (texto, link ou
- * PDF) e guarda para a tela Início. Não faz cache do app, então você sempre
- * usa a versão mais nova do servidor.
+ * Faz duas coisas: recebe o que você compartilha pelo celular (texto, link ou
+ * PDF) para a tela Início, e mostra o lembrete diário. Não faz cache do app,
+ * então você sempre usa a versão mais nova do servidor.
  */
 const SHARE_CACHE = "anki-studio-share";
 
@@ -42,3 +42,34 @@ async function receiveShare(request) {
     return Response.redirect("/", 303);
   }
 }
+
+// ---------- lembrete diário (Web Push) ----------
+
+self.addEventListener("push", (event) => {
+  let data = { title: "Anki Studio", body: "Hora de revisar!", url: "/" };
+  try {
+    data = { ...data, ...event.data.json() };
+  } catch {
+    // mensagem sem JSON: usa o texto padrão
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/pwa/icon-192.png",
+      badge: "/pwa/icon-192.png",
+      tag: "lembrete-diario",
+      data: { url: data.url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => "focus" in client);
+      return open ? open.focus() : self.clients.openWindow(url);
+    }),
+  );
+});

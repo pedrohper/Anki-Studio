@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/client/api";
+import type { AccessStatus, TunnelProvider } from "@/lib/schemas/api";
+import { cn } from "@/lib/utils";
 import { CopyButton } from "./copy-button";
 import { QrImage } from "./qr-image";
 
@@ -46,7 +48,7 @@ export function RemoteAccess({ open }: { open: boolean }) {
     enabled: open,
     // Enquanto liga, pergunta ao servidor a cada 1,5 s até o link aparecer.
     refetchInterval: (query) =>
-      ["installing", "starting"].includes(query.state.data?.tunnel.status ?? "") ? 1_500 : false,
+      ["installing", "starting", "reconnecting"].includes(query.state.data?.tunnel.status ?? "") ? 1_500 : false,
   });
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -131,7 +133,7 @@ export function RemoteAccess({ open }: { open: boolean }) {
   }
 
   const { status, url, error } = access.tunnel;
-  const busy = status === "installing" || status === "starting" || tunnel.isPending;
+  const busy = status === "installing" || status === "starting" || status === "reconnecting" || tunnel.isPending;
 
   return (
     <div className="grid gap-4">
@@ -153,7 +155,10 @@ export function RemoteAccess({ open }: { open: boolean }) {
               <CopyButton value={url} label="Copiar link" />
             </div>
             <p className="text-muted-foreground text-xs">
-              O link muda toda vez que você liga. Por ele (https) dá para instalar como app e usar o Compartilhar.
+              {access.tunnel.provider === "ngrok"
+                ? "Link fixo: instale como app no celular e ele sempre abre."
+                : "Este link muda toda vez que liga. Para um link fixo, use o ngrok abaixo."}{" "}
+              Se cair, religa sozinho; se você fechar o app, volta ligado ao abrir.
             </p>
             <div>
               <Button size="sm" variant="outline" onClick={() => tunnel.mutate(false)} disabled={tunnel.isPending}>
@@ -170,18 +175,31 @@ export function RemoteAccess({ open }: { open: boolean }) {
             </p>
           )}
           {status === "starting" && <p className="text-muted-foreground text-sm">Criando o link seguro…</p>}
+          {status === "reconnecting" && (
+            <p className="text-amber-600 text-sm dark:text-amber-400">
+              {error ?? "Reconectando…"} Tentando de novo sozinho.
+            </p>
+          )}
           {status === "error" && error && <p className="text-destructive text-sm">{error}</p>}
           <div>
             <Button onClick={() => tunnel.mutate(true)} disabled={busy} data-testid="tunnel-on">
               {busy ? <Loader2Icon className="animate-spin" /> : <PowerIcon />}
-              {busy ? "Ligando…" : status === "error" ? "Tentar de novo" : "Ligar acesso fora de casa"}
+              {status === "reconnecting"
+                ? "Religando…"
+                : busy
+                  ? "Ligando…"
+                  : status === "error"
+                    ? "Tentar de novo"
+                    : "Ligar acesso fora de casa"}
             </Button>
           </div>
           <p className="text-muted-foreground text-xs">
-            Gera um link https (Cloudflare, grátis e sem conta) enquanto o Anki Studio estiver aberto no PC.
+            Gera um link https enquanto o Anki Studio estiver aberto no PC. Deixe o PC sem hibernar.
           </p>
         </div>
       )}
+
+      <TunnelProviderForm access={access} onSaved={refresh} />
 
       <details className="text-sm">
         <summary className="cursor-pointer font-medium">Trocar ou remover o PIN</summary>
@@ -224,5 +242,108 @@ export function RemoteAccess({ open }: { open: boolean }) {
         </div>
       </details>
     </div>
+  );
+}
+
+const NGROK_TOKEN_URL = "https://dashboard.ngrok.com/get-started/your-authtoken";
+
+/** Tipo de link: Cloudflare (sem conta, muda) ou ngrok (conta grátis, fixo). */
+function TunnelProviderForm({ access, onSaved }: { access: AccessStatus; onSaved: () => void }) {
+  const tokenId = useId();
+  const domainId = useId();
+  const [provider, setProvider] = useState<TunnelProvider>(access.config.provider);
+  const [token, setToken] = useState("");
+  const [domain, setDomain] = useState(access.config.ngrokDomain);
+  const save = useMutation({
+    mutationFn: () =>
+      api.setTunnelConfig({
+        provider,
+        ...(provider === "ngrok" ? { ngrokToken: token || undefined, ngrokDomain: domain } : {}),
+      }),
+    onSuccess: () => {
+      setToken("");
+      toast.success(provider === "ngrok" ? "Link fixo do ngrok salvo" : "Usando o link da Cloudflare");
+      onSaved();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const needsToken = provider === "ngrok" && !access.config.hasNgrokToken && !token;
+  const changed =
+    provider !== access.config.provider ||
+    Boolean(token) ||
+    (provider === "ngrok" && domain !== access.config.ngrokDomain);
+
+  return (
+    <details className="text-sm">
+      <summary className="cursor-pointer font-medium">Tipo de link</summary>
+      <div className="mt-3 grid gap-3">
+        <fieldset className="grid gap-2 sm:grid-cols-2">
+          <legend className="sr-only">Tipo de link</legend>
+          {(
+            [
+              ["cloudflare", "Muda a cada vez", "Cloudflare. Sem conta, liga na hora."],
+              ["ngrok", "Link fixo", "ngrok. Conta grátis; o app instalado no celular nunca quebra."],
+            ] as const
+          ).map(([value, title, hint]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={provider === value}
+              onClick={() => setProvider(value)}
+              className={cn(
+                "grid gap-0.5 rounded-lg border p-3 text-left transition-colors",
+                provider === value ? "border-primary bg-primary/5" : "hover:bg-muted",
+              )}
+            >
+              <span className="font-medium">{title}</span>
+              <span className="text-muted-foreground text-xs">{hint}</span>
+            </button>
+          ))}
+        </fieldset>
+        {provider === "ngrok" && (
+          <div className="grid gap-3">
+            <ol className="list-decimal pl-5 text-muted-foreground text-xs">
+              <li>
+                Crie uma conta grátis e copie o seu token em{" "}
+                <a href={NGROK_TOKEN_URL} target="_blank" rel="noreferrer" className="text-primary underline">
+                  dashboard.ngrok.com
+                </a>
+                .
+              </li>
+              <li>Cole abaixo. O token fica só no seu PC, nunca volta para o navegador.</li>
+            </ol>
+            <div className="grid gap-1.5">
+              <Label htmlFor={tokenId}>Token do ngrok</Label>
+              <Input
+                id={tokenId}
+                type="password"
+                autoComplete="off"
+                placeholder={access.config.hasNgrokToken ? "Token salvo (cole outro para trocar)" : "Cole o token aqui"}
+                value={token}
+                onChange={(event) => setToken(event.target.value.trim())}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={domainId}>Domínio (opcional)</Label>
+              <Input
+                id={domainId}
+                placeholder="Vazio = o domínio grátis da sua conta"
+                value={domain}
+                onChange={(event) => setDomain(event.target.value)}
+              />
+              <span className="text-muted-foreground text-xs">
+                A conta grátis já tem um domínio fixo. Na primeira visita pelo navegador o ngrok mostra um aviso: é só
+                tocar em "Visit Site".
+              </span>
+            </div>
+          </div>
+        )}
+        <div>
+          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || needsToken || !changed}>
+            {save.isPending && <Loader2Icon className="animate-spin" />} Salvar tipo de link
+          </Button>
+        </div>
+      </div>
+    </details>
   );
 }

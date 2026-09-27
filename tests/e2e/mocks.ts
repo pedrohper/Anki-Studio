@@ -37,6 +37,7 @@ export async function mockBackend(
   { onboarding = false, serverKey = true, settings = {} as Record<string, unknown> } = {},
 ) {
   const added: unknown[] = [];
+  const actions: string[] = [];
   if (!onboarding || Object.keys(settings).length > 0) {
     // Pula a configuração inicial nos testes que não são sobre ela.
     await page.addInitScript((extra) => {
@@ -59,6 +60,9 @@ export async function mockBackend(
   await page.route("**/api/access", (route) =>
     route.fulfill({ json: { pinSet: false, manageable: true, tunnel: { status: "off", url: null, error: null } } }),
   );
+  await page.route("**/api/reminder", (route) =>
+    route.fulfill({ json: { enabled: true, time: "19:00", publicKey: "BExemplo", endpoints: [] } }),
+  );
   await page.route("**/api/network", (route) =>
     route.fulfill({
       json: { addresses: [{ ip: "192.168.100.10", url: "http://192.168.100.10:3000", label: "Wi-Fi" }] },
@@ -79,7 +83,14 @@ export async function mockBackend(
   const generateBodies: Array<Record<string, unknown>> = [];
   await page.route("**/api/generate", async (route) => {
     generateBodies.push(route.request().postDataJSON() as Record<string, unknown>);
-    await route.fulfill({ json: plan });
+    await route.fulfill({
+      json: plan,
+      headers: {
+        "x-llm-usage": JSON.stringify([
+          { provider: "deepseek", model: "deepseek-flash", input: 12_000, output: 3_000 },
+        ]),
+      },
+    });
   });
   await page.route("**/api/route", (route) =>
     route.fulfill({
@@ -178,9 +189,10 @@ export async function mockBackend(
       ],
     };
     if (action === "addNotes") added.push(...(params?.notes ?? []));
+    actions.push(action);
     await route.fulfill({ json: { result: results[action] ?? null, error: null } });
   });
-  return { added, generateBodies };
+  return { added, generateBodies, actions };
 }
 
 /** Revisor simulado: aprova o 1º card, corrige o 2º e sugere descartar o 3º. */

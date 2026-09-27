@@ -4,12 +4,13 @@ import { errorResponse, readJson } from "@/lib/server/errors";
 import { guard } from "@/lib/server/guard";
 import { routeMaterial } from "@/lib/server/insights";
 import { completeJson, resolveLlm } from "@/lib/server/llm";
+import { withUsage } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** Material solto na tela Início: a IA escolhe em qual aba ele entra. */
-export async function POST(request: Request) {
+export const POST = withUsage(async (request: Request) => {
   try {
     guard(request, "ai");
     const input = await readJson(request, routeRequestSchema);
@@ -17,4 +18,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return errorResponse(error);
   }
-}
+});

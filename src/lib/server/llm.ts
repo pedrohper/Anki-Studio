@@ -5,6 +5,7 @@ import { type ModelRef, PROVIDERS, type ProviderId } from "@/lib/llm/providers";
 import { parseJsonLoose } from "@/lib/shared/json";
 import { getEnv, providerEnabled, serverKeyFor } from "./env";
 import { ApiError } from "./errors";
+import { recordUsage } from "./usage";
 
 /** Header com a chave do visitante para o provedor da requisição. */
 export const API_KEY_HEADER = "x-llm-key";
@@ -186,6 +187,12 @@ export const completeJson: CompleteJson = async ({
       const limit = attempt === 1 ? maxTokens : Math.max(maxTokens * 2, spentOnThinking ? 8_000 : 0);
       const response = await createWithFallbacks(client, buildChatParams(llm, system, user, temperature, limit));
       content = response.choices[0]?.message?.content ?? "";
+      recordUsage({
+        provider: llm.provider,
+        model: llm.model,
+        input: response.usage?.prompt_tokens ?? 0,
+        output: response.usage?.completion_tokens ?? 0,
+      });
       if (response.choices[0]?.finish_reason === "length") {
         spentOnThinking = content.trim().length === 0;
         console.warn(

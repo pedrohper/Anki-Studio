@@ -16,10 +16,9 @@ for %%A in (%*) do (
 where node >nul 2>nul || (echo [ERRO] Instale o Node.js 22 ou mais novo: https://nodejs.org & pause & exit /b 1)
 where pnpm >nul 2>nul || (echo Instalando o pnpm... & call npm install -g pnpm)
 
-if not exist node_modules (
-    echo Instalando dependencias...
-    call pnpm install || (pause & exit /b 1)
-)
+rem Instala ou atualiza as dependencias (rapido quando nada mudou)
+echo Conferindo dependencias...
+call pnpm install --prefer-offline || (pause & exit /b 1)
 
 if "%REBUILD%"=="1" if exist .next rmdir /s /q .next
 

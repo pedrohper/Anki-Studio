@@ -61,6 +61,7 @@ test("configurações mostram o endereço e o QR code para o celular", async ({ 
   await mockBackend(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Configurações" }).click();
+  await page.getByRole("tab", { name: "Celular" }).click();
   await expect(page.getByTestId("lan-url")).toHaveText("http://192.168.100.10:3000");
   await expect(page.getByRole("img", { name: /QR code para abrir/ })).toBeVisible();
 });
@@ -84,5 +85,6 @@ test("configurações: criar PIN para o acesso fora de casa", async ({ page }) =
   await mockBackend(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Configurações" }).click();
+  await page.getByRole("tab", { name: "Celular" }).click();
   await expect(page.getByTestId("create-pin")).toBeVisible();
 });

@@ -4,12 +4,13 @@ import { errorResponse, readJson } from "@/lib/server/errors";
 import { guard } from "@/lib/server/guard";
 import { completeJson, resolveLlm } from "@/lib/server/llm";
 import { buildRefineUserMessage, REFINE_SYSTEM } from "@/lib/server/prompts/refine";
+import { withUsage } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** Propõe uma nova versão do prompt da aba com base nos cards editados e descartados. */
-export async function POST(request: Request) {
+export const POST = withUsage(async (request: Request) => {
   try {
     guard(request, "ai");
     const body = await readJson(request, refineRequestSchema);
@@ -29,4 +30,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return errorResponse(error);
   }
-}
+});

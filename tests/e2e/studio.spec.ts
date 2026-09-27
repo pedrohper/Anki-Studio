@@ -28,6 +28,8 @@ test("gera, revisa e envia cards ao Anki", async ({ page }) => {
 
   await page.getByTestId("send-to-anki").click();
   await expect(page.getByText("2 enviados para Faculdade::Cálculo II")).toBeVisible();
+  // depois de enviar, o Anki do PC sincroniza com o AnkiWeb (cards aparecem no celular)
+  await expect(page.getByText("Sincronizado: os cards já aparecem no celular.")).toBeVisible();
   expect(added).toHaveLength(2);
   expect(JSON.stringify(added[0])).toContain("y fica <b>fixo</b>.");
   expect(JSON.stringify(added[1])).toContain("Omissão de Palavras");
@@ -92,4 +94,18 @@ test("um segundo modelo revisa e a pessoa aplica a correção", async ({ page })
   await page.getByTestId("send-to-anki").click();
   await expect(page.getByText("2 enviados para Faculdade::Cálculo II")).toBeVisible();
   expect(JSON.stringify(added[1])).toContain("maior crescimento");
+});
+
+test("painel de custos soma o que a IA gastou", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/");
+  await openTab(page, "Estudo geral");
+  await page.getByLabel("Material de estudo").fill("Derivadas parciais: a derivada em x trata y como constante.");
+  await page.getByTestId("generate").click();
+  await expect(page.getByTestId("plan-review")).toBeVisible();
+  await page.getByRole("button", { name: "Configurações" }).click();
+  await page.getByRole("tab", { name: "IA" }).click();
+  const panel = page.getByTestId("usage-panel");
+  await expect(panel).toContainText("DeepSeek");
+  await expect(panel).toContainText(/US\$\s?0,0072/);
 });

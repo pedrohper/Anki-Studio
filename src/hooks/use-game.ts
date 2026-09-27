@@ -6,7 +6,7 @@ import { useWeakSpotsCache } from "@/components/app/weak-spots-view";
 import * as db from "@/lib/client/db";
 import { computeStats, evaluateAchievements } from "@/lib/shared/achievements";
 import { sumDue } from "@/lib/shared/stats";
-import { useAnkiDashboard, useAnkiStatus, useHistory, useTabs } from "./use-studio";
+import { useAnkiDashboard, useAnkiStatus, useHistoryCount, useTabs } from "./use-studio";
 
 export const ACHIEVEMENTS_KEY = "achievements";
 
@@ -23,7 +23,7 @@ export function useGame() {
   const { data: anki, isPending: ankiPending } = useAnkiStatus();
   const connected = Boolean(anki?.connected);
   const { data: dashboard, isPending: dashboardPending } = useAnkiDashboard();
-  const { data: history, isPending: historyPending } = useHistory();
+  const { data: cardsCreated, isPending: historyPending } = useHistoryCount();
   const { data: tabs = [] } = useTabs();
   const { data: weak } = useWeakSpotsCache();
   const { data: unlocked, isPending: unlockedPending } = useUnlockedAchievements();
@@ -32,12 +32,12 @@ export function useGame() {
     () =>
       computeStats({
         byDay: dashboard?.byDay ?? [],
-        cardsCreated: history?.length ?? 0,
+        cardsCreated: cardsCreated ?? 0,
         tabsCount: tabs.length,
         dueTotal: dashboard ? sumDue(dashboard.stats).total : null,
         weakSpotsAnalyzed: Boolean(weak),
       }),
-    [dashboard, history, tabs.length, weak],
+    [dashboard, cardsCreated, tabs.length, weak],
   );
 
   return {

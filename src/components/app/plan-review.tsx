@@ -11,10 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { queryKeys, useAnkiClient, useAnkiStatus } from "@/hooks/use-studio";
-import { AnkiError, type OutgoingCard, sendCards } from "@/lib/client/anki-connect";
+import { AnkiError, type OutgoingCard, sendCards, syncAnkiWeb } from "@/lib/client/anki-connect";
 import { api } from "@/lib/client/api";
 import * as db from "@/lib/client/db";
 import { downloadBlob, slugify } from "@/lib/client/files";
+import { getSettings } from "@/lib/client/settings";
 import { buildFeedbackEvents, type ReviewItem, type ReviewState } from "@/lib/review";
 import type { HistoryEntry } from "@/lib/schemas/storage";
 import type { Tab } from "@/lib/schemas/tab";
@@ -173,6 +174,14 @@ export function PlanReview({
       if (result.duplicates.length) parts.push(`${result.duplicates.length} já existiam no baralho`);
       if (result.failed.length) parts.push(`${result.failed.length} falharam`);
       (result.failed.length ? toast.warning : toast.success)(parts.join(" · "));
+      if (result.added.length > 0 && getSettings().autoSyncAnkiWeb) {
+        // Sem esperar: a sincronização pode levar alguns segundos e não deve travar a tela.
+        toast.promise(syncAnkiWeb(client), {
+          loading: "Sincronizando com o AnkiWeb…",
+          success: "Sincronizado: os cards já aparecem no celular.",
+          error: "Não deu para sincronizar com o AnkiWeb (entre na sua conta no Anki). Os cards estão no PC.",
+        });
+      }
     },
     onError: (error) => {
       if (error instanceof AnkiError && error.kind === "offline") {
