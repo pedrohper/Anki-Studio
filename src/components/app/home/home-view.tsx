@@ -10,6 +10,7 @@ import { useSettings } from "@/lib/client/settings";
 import { belongsTo, groupDecks } from "@/lib/shared/decks";
 import { greetingFor, lastNDays, studyStreak, sumDue, toIsoDay } from "@/lib/shared/stats";
 import { tabForDeck } from "@/lib/tab-match";
+import { LevelCard } from "../game/level-card";
 import type { GenerationDraft } from "../material-input";
 import { useWeakSpotsCache } from "../weak-spots-view";
 import { QuickCapture } from "./quick-capture";
@@ -45,12 +46,14 @@ export function HomeView({
   onOpenTab,
   onRouted,
   onOpenWeakSpots,
+  onOpenAchievements,
   onImportDecks,
   onOpenSettings,
 }: {
   onOpenTab: (tabId: string) => void;
   onRouted: (tabId: string, draft: GenerationDraft) => void;
   onOpenWeakSpots: () => void;
+  onOpenAchievements: () => void;
   onImportDecks: () => void;
   onOpenSettings: () => void;
 }) {
@@ -124,6 +127,8 @@ export function HomeView({
       </header>
 
       {tabs.length > 0 && <QuickCapture tabs={tabs} onRouted={onRouted} />}
+
+      <LevelCard onOpenAchievements={onOpenAchievements} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile icon={RotateCcwIcon} label="Revisões hoje" value={connected ? today.toLocaleString("pt-BR") : "–"} />

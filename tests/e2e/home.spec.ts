@@ -64,3 +64,25 @@ test("configurações mostram o endereço e o QR code para o celular", async ({ 
   await expect(page.getByTestId("lan-url")).toHaveText("http://192.168.100.10:3000");
   await expect(page.getByRole("img", { name: /QR code para abrir/ })).toBeVisible();
 });
+
+test("gamificação: nível, semana e conquistas com comemoração", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/");
+  const card = page.getByTestId("level-card");
+  await expect(card).toContainText("Nível");
+  await expect(page.getByTestId("streak")).toContainText("30 dias seguidos");
+  // primeira visita: as conquistas que já tinha vêm num aviso só
+  await expect(page.getByText(/conquistas desbloqueadas!/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Conquistas" }).first().click();
+  await expect(page.getByRole("heading", { name: "Conquistas" })).toBeVisible();
+  await expect(page.getByTestId("tier-prata").locator("[data-unlocked]", { hasText: "Semana inteira" })).toBeVisible();
+  await expect(page.getByTestId("tier-lenda")).toContainText("Centenário");
+});
+
+test("configurações: criar PIN para o acesso fora de casa", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Configurações" }).click();
+  await expect(page.getByTestId("create-pin")).toBeVisible();
+});
