@@ -56,6 +56,9 @@ export async function mockBackend(
       },
     }),
   );
+  await page.route("**/api/access", (route) =>
+    route.fulfill({ json: { pinSet: false, manageable: true, tunnel: { status: "off", url: null, error: null } } }),
+  );
   await page.route("**/api/network", (route) =>
     route.fulfill({
       json: { addresses: [{ ip: "192.168.100.10", url: "http://192.168.100.10:3000", label: "Wi-Fi" }] },

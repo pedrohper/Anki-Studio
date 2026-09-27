@@ -8,6 +8,7 @@ import {
   PlusIcon,
   SettingsIcon,
   TargetIcon,
+  TrophyIcon,
   UploadIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +26,8 @@ import { SITE_LINKS } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { AnkiStatus } from "./anki-status";
 import { DeckImportDialog } from "./deck-import-dialog";
+import { AchievementsView } from "./game/achievements-view";
+import { GameWatcher } from "./game/game-watcher";
 import { HistorySheet } from "./history-sheet";
 import { HomeView } from "./home/home-view";
 import { Logo } from "./logo";
@@ -40,6 +43,7 @@ const ACTIVE_TAB_KEY = "anki-studio:active-tab";
 /** Telas que não são abas. */
 const HOME = "home";
 const WEAK = "weak";
+const ACHIEVEMENTS = "achievements";
 
 function readActiveTab(): string | null {
   try {
@@ -76,9 +80,15 @@ export function Studio() {
 
   useEffect(() => {
     if (!tabs) return;
-    if (activeId === HOME || activeId === WEAK || (activeId && tabs.some((tab) => tab.id === activeId))) return;
+    if (
+      activeId === HOME ||
+      activeId === WEAK ||
+      activeId === ACHIEVEMENTS ||
+      (activeId && tabs.some((tab) => tab.id === activeId))
+    )
+      return;
     const stored = readActiveTab();
-    setActiveId(stored === WEAK || tabs.some((tab) => tab.id === stored) ? stored : HOME);
+    setActiveId(stored === WEAK || stored === ACHIEVEMENTS || tabs.some((tab) => tab.id === stored) ? stored : HOME);
   }, [tabs, activeId]);
 
   /** Abre a aba e já gera os cards com o material recebido. */
@@ -135,6 +145,7 @@ export function Studio() {
             {[
               { id: HOME, label: "Início", icon: HomeIcon },
               { id: WEAK, label: "Pontos fracos", icon: TargetIcon },
+              { id: ACHIEVEMENTS, label: "Conquistas", icon: TrophyIcon },
             ].map((item) => (
               <li key={item.id} className="shrink-0">
                 <button
@@ -246,11 +257,14 @@ export function Studio() {
               onOpenTab={selectTab}
               onRouted={sendToTab}
               onOpenWeakSpots={() => selectTab(WEAK)}
+              onOpenAchievements={() => selectTab(ACHIEVEMENTS)}
               onImportDecks={() => setImportingDecks(true)}
               onOpenSettings={() => setSettingsOpen(true)}
             />
           ) : activeId === WEAK ? (
             <WeakSpotsView onReinforce={sendToTab} />
+          ) : activeId === ACHIEVEMENTS ? (
+            <AchievementsView />
           ) : activeTab ? (
             <TabWorkspace
               key={activeTab.id}
@@ -312,6 +326,7 @@ export function Studio() {
       </footer>
 
       {showOnboarding && <Onboarding onFinish={finishOnboarding} />}
+      {isClient && onboardingDone && <GameWatcher />}
       <TabEditorDialog open={creating} onOpenChange={setCreating} onSaved={(tab) => selectTab(tab.id)} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <HistorySheet open={historyOpen} onOpenChange={setHistoryOpen} />
