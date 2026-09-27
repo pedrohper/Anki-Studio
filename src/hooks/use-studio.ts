@@ -136,6 +136,11 @@ export function useHistory() {
   return useQuery({ queryKey: queryKeys.history, queryFn: () => db.listHistory(300) });
 }
 
+/** Total de cards já criados (o histórico acima mostra só os mais recentes). */
+export function useHistoryCount() {
+  return useQuery({ queryKey: [...queryKeys.history, "count"], queryFn: () => db.countHistory() });
+}
+
 export function useFeedback(tabId: string) {
   return useQuery({ queryKey: queryKeys.feedback(tabId), queryFn: () => db.listFeedback(tabId) });
 }

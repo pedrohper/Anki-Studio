@@ -52,7 +52,7 @@ export async function DELETE(request: Request) {
     assertManageable();
     const body = await readJson(request, removeSchema);
     checkCurrentPin(request, body.currentPin);
-    stopTunnel();
+    await stopTunnel();
     removePin();
     const response = NextResponse.json({ ok: true });
     response.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });

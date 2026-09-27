@@ -35,6 +35,10 @@ Comecei este projeto para automatizar os meus próprios estudos (faculdade de Si
 - **Compartilhar abas.** Exporte uma aba como arquivo e outra pessoa importa.
 - **No celular.** O `executar.bat` mostra um QR code com o endereço do PC na rede Wi-Fi, e as Configurações também. Com um link https dá para **instalar como app** e usar o **Compartilhar** do Android: um texto, link ou PDF de outro app cai direto na captura rápida.
 - **Fora de casa, com PIN.** Nas Configurações você cria um PIN e liga um link https (Cloudflare Tunnel, grátis e sem conta) com um clique. Sem PIN o botão nem liga, para ninguém gastar as suas chaves com o link.
+- **Mesmos dados no PC e no celular.** Rodando no PC, abas, histórico e conquistas ficam em `data/estudio` e todo aparelho que abre o app vê os mesmos dados. No site público cada navegador guarda os seus.
+- **Lembrete diário.** Uma notificação no celular no horário que você escolher: "Não quebre sua sequência de 12 dias 🔥 · 42 cards esperando".
+- **Direto para o celular.** Depois de enviar cards, o app pede ao Anki do PC para sincronizar com o AnkiWeb, e eles aparecem no AnkiDroid em segundos.
+- **Gastos com IA.** Quanto cada provedor já custou por mês, pelos tokens que a própria IA informa.
 - **Sem conta, sem banco.** Tudo fica no navegador (IndexedDB), com backup exportável.
 
 No primeiro acesso, um **guia de configuração** acompanha a pessoa: testa a chave da DeepSeek (mostrando o saldo, sem gastar crédito), detecta o Anki ao vivo enquanto ela instala o AnkiConnect, importa backup e vocabulário e ajuda a escolher a primeira aba. Rodando localmente, o que já está configurado no `.env` aparece como pronto.
@@ -146,7 +150,10 @@ O Chrome pode pedir permissão para o site acessar a rede local; é só aceitar.
 **Fora de casa.** Em Configurações › Abrir no celular:
 
 1. Crie um **PIN** (4 a 12 números). A partir daí, todo aparelho novo pede o PIN uma vez (fica conectado por 90 dias).
-2. Clique em **Ligar acesso fora de casa**. Na primeira vez o app baixa o `cloudflared` (do GitHub oficial da Cloudflare) para `data/bin`; depois aparece um link `https://….trycloudflare.com` com QR code. O link muda cada vez que você liga e some quando você desliga ou fecha o app.
+2. Clique em **Ligar acesso fora de casa**. Na primeira vez o app baixa o `cloudflared` (do GitHub oficial da Cloudflare) para `data/bin`; depois aparece um link `https://….trycloudflare.com` com QR code, que muda cada vez que você liga.
+3. **Link fixo (recomendado):** em "Tipo de link", escolha **ngrok**, crie uma conta grátis e cole o token. O endereço passa a ser sempre o mesmo, então o app instalado no celular nunca quebra.
+
+Se o link cair, ele religa sozinho (e confere a cada minuto se continua abrindo). Se estava ligado quando você fechou o app, volta ligado ao abrir. Deixe o PC sem hibernar.
 
 Por baixo: o PIN fica em `data/acesso.json` só como hash (scrypt), com um segredo aleatório que assina os cookies `HttpOnly`; trocar o PIN desconecta todos os aparelhos. O `proxy.ts` bloqueia páginas e API sem sessão, e o login tem limite por IP e trava por 15 min (dobrando a cada vez) depois de 10 erros seguidos, porque um PIN de 4 números tem só 10 mil combinações.
 

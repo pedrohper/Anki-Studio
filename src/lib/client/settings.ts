@@ -24,6 +24,8 @@ const settingsSchema = z.object({
   ankiUrl: z.string().default("http://127.0.0.1:8765"),
   ankiKey: z.string().default(""),
   saveContext: z.boolean().default(true),
+  /** Depois de enviar cards, pede ao Anki do PC para sincronizar com o AnkiWeb (aparecem no celular). */
+  autoSyncAnkiWeb: z.boolean().default(true),
   /** Como a pessoa quer ser chamada ("Olá, Pedro"). */
   userName: z.string().max(40).default(""),
   /** Onboarding concluído (ou pulado) neste navegador. */

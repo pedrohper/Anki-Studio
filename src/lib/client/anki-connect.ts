@@ -137,6 +137,14 @@ export function clozeToBasic(front: string, back: string): { front: string; back
   return { front: question, back: back ? `${answerHtml}<br>${back}` : answerHtml };
 }
 
+/**
+ * Pede ao Anki Desktop para sincronizar com o AnkiWeb (igual ao botão Sincronizar).
+ * Assim os cards novos aparecem no AnkiDroid/AnkiMobile sem voltar ao PC.
+ */
+export async function syncAnkiWeb(client: AnkiClient): Promise<void> {
+  await client.invoke("sync");
+}
+
 export async function sendCards(
   client: AnkiClient,
   { deckName, cards, tags }: { deckName: string; cards: OutgoingCard[]; tags: string[] },

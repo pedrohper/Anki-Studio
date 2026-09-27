@@ -4,12 +4,13 @@ import { errorResponse, readJson } from "@/lib/server/errors";
 import { guard } from "@/lib/server/guard";
 import { completeJson, resolveLlm } from "@/lib/server/llm";
 import { buildTabPromptUserMessage, TAB_PROMPT_WRITER_SYSTEM } from "@/lib/server/prompts/tab-prompt";
+import { withUsage } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** A IA escreve o system prompt de uma aba a partir do objetivo descrito. */
-export async function POST(request: Request) {
+export const POST = withUsage(async (request: Request) => {
   try {
     guard(request, "ai");
     const { settings, llm: ref } = await readJson(request, promptRequestSchema);
@@ -26,4 +27,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return errorResponse(error);
   }
-}
+});

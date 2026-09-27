@@ -124,12 +124,17 @@ export const appConfigSchema = z.object({
   defaultGenerator: modelRefSchema.default({ provider: "deepseek", model: "" }),
   passwordProtected: z.boolean().default(false),
   lanAccess: z.boolean().default(false),
+  sharedData: z.boolean().default(false),
 });
 
+export const tunnelProviderSchema = z.enum(["cloudflare", "ngrok"]);
+export type TunnelProvider = z.infer<typeof tunnelProviderSchema>;
+
 export const tunnelSnapshotSchema = z.object({
-  status: z.enum(["off", "installing", "starting", "on", "error"]),
+  status: z.enum(["off", "installing", "starting", "on", "reconnecting", "error"]),
   url: z.string().nullable(),
   error: z.string().nullable(),
+  provider: tunnelProviderSchema.default("cloudflare"),
 });
 export type TunnelSnapshot = z.infer<typeof tunnelSnapshotSchema>;
 
@@ -137,6 +142,9 @@ export const accessStatusSchema = z.object({
   pinSet: z.boolean(),
   manageable: z.boolean(),
   tunnel: tunnelSnapshotSchema,
+  config: z
+    .object({ provider: tunnelProviderSchema, hasNgrokToken: z.boolean(), ngrokDomain: z.string() })
+    .default({ provider: "cloudflare", hasNgrokToken: false, ngrokDomain: "" }),
 });
 export type AccessStatus = z.infer<typeof accessStatusSchema>;
 
@@ -275,3 +283,13 @@ export const weakSpotsResponseSchema = z.object({
   words: z.array(z.string()),
 });
 export type WeakSpotsResponse = z.infer<typeof weakSpotsResponseSchema>;
+
+// ---------- lembrete diário ----------
+
+export const reminderStatusSchema = z.object({
+  enabled: z.boolean(),
+  time: z.string(),
+  publicKey: z.string(),
+  endpoints: z.array(z.string()),
+});
+export type ReminderStatus = z.infer<typeof reminderStatusSchema>;

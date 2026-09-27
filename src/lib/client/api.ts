@@ -21,13 +21,16 @@ import {
   promptResponseSchema,
   type RefineRequest,
   type RefineResponse,
+  type ReminderStatus,
   type ReviewRequest,
   type ReviewResponse,
   type RouteRequest,
   type RouteResponse,
   refineResponseSchema,
+  reminderStatusSchema,
   reviewResponseSchema,
   routeResponseSchema,
+  type TunnelProvider,
   type TunnelSnapshot,
   ttsResponseSchema,
   tunnelSnapshotSchema,
@@ -38,6 +41,13 @@ import {
 import { type StudyPlan, studyPlanSchema } from "@/lib/schemas/card";
 import type { TabSettings } from "@/lib/schemas/tab";
 import { keyFor } from "./settings";
+import { recordUsageHeader } from "./usage";
+
+/** A tela de custos se inscreve aqui para atualizar quando chega gasto novo. */
+let notifyUsage: (() => void) | undefined;
+export function onUsageRecorded(listener: () => void) {
+  notifyUsage = listener;
+}
 
 export class ApiRequestError extends Error {
   constructor(
@@ -93,6 +103,8 @@ async function request<T extends ZodType>(
   provider?: ProviderId,
 ): Promise<z.output<T>> {
   const response = await send(path, body, provider ? keyFor(provider) : undefined);
+  // Tokens gastos nesta chamada, para o painel de custos.
+  recordUsageHeader(response.headers.get("x-llm-usage"), notifyUsage);
   return schema.parse(await response.json());
 }
 
@@ -111,6 +123,27 @@ export const api = {
   removePin: async (currentPin: string): Promise<void> => {
     await sendWithMethod("DELETE", "/api/access/pin", { currentPin });
   },
+  reminder: async (): Promise<ReminderStatus> => reminderStatusSchema.parse(await (await send("/api/reminder")).json()),
+  saveReminder: async (body: { enabled?: boolean; time?: string }): Promise<void> => {
+    await send("/api/reminder", body);
+  },
+  addReminderDevice: async (subscription: unknown, label: string): Promise<void> => {
+    await send("/api/reminder/device", { subscription, label });
+  },
+  removeReminderDevice: async (endpoint: string): Promise<void> => {
+    await sendWithMethod("DELETE", "/api/reminder/device", { endpoint });
+  },
+  testReminder: async (): Promise<void> => {
+    await send("/api/reminder/test", {});
+  },
+  setTunnelConfig: async (config: {
+    provider: TunnelProvider;
+    ngrokToken?: string;
+    ngrokDomain?: string;
+  }): Promise<TunnelSnapshot> =>
+    tunnelSnapshotSchema.parse(
+      ((await (await send("/api/access/tunnel/config", config)).json()) as { tunnel: unknown }).tunnel,
+    ),
   setTunnel: async (on: boolean): Promise<TunnelSnapshot> =>
     tunnelSnapshotSchema.parse(
       ((await (await send("/api/access/tunnel", { on })).json()) as { tunnel: unknown }).tunnel,

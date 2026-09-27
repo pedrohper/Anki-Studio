@@ -14,13 +14,13 @@ export async function POST(request: Request) {
   try {
     if (process.env.VERCEL) throw new ApiError(404, "Isto só funciona com o app rodando no seu PC.", "not_available");
     const { on } = await readJson(request, bodySchema);
-    if (!on) return NextResponse.json({ tunnel: stopTunnel() });
+    if (!on) return NextResponse.json({ tunnel: await stopTunnel() });
     if (!pinIsSet()) {
       throw new ApiError(400, "Crie um PIN antes de ligar o acesso fora de casa.", "pin_required");
     }
     // O túnel aponta para a porta local deste servidor (não para o host do link).
     const port = process.env.PORT ?? portFromRequest(request);
-    return NextResponse.json({ tunnel: startTunnel(port) });
+    return NextResponse.json({ tunnel: await startTunnel(port) });
   } catch (error) {
     return errorResponse(error);
   }
