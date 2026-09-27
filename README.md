@@ -34,7 +34,7 @@ Comecei este projeto para automatizar os meus próprios estudos (faculdade de Si
 - **Inglês i+1.** Frases em que só a palavra nova é desconhecida, com áudio nativo, vários sentidos por palavra e alerta de falsos cognatos.
 - **Compartilhar abas.** Exporte uma aba como arquivo e outra pessoa importa.
 - **No celular.** O `executar.bat` mostra um QR code com o endereço do PC na rede Wi-Fi, e as Configurações também. Com um link https dá para **instalar como app** e usar o **Compartilhar** do Android: um texto, link ou PDF de outro app cai direto na captura rápida.
-- **Fora de casa, com senha.** `fora-de-casa.bat` cria um link https temporário (Cloudflare Tunnel) e só funciona com `APP_PASSWORD` definida, para ninguém gastar as suas chaves com o link.
+- **Fora de casa, com PIN.** Nas Configurações você cria um PIN e liga um link https (Cloudflare Tunnel, grátis e sem conta) com um clique. Sem PIN o botão nem liga, para ninguém gastar as suas chaves com o link.
 - **Sem conta, sem banco.** Tudo fica no navegador (IndexedDB), com backup exportável.
 
 No primeiro acesso, um **guia de configuração** acompanha a pessoa: testa a chave da DeepSeek (mostrando o saldo, sem gastar crédito), detecta o Anki ao vivo enquanto ela instala o AnkiConnect, importa backup e vocabulário e ajuda a escolher a primeira aba. Rodando localmente, o que já está configurado no `.env` aparece como pronto.
@@ -143,19 +143,18 @@ O Chrome pode pedir permissão para o site acessar a rede local; é só aceitar.
 
 **Mesmo Wi-Fi.** Rode o `executar.bat`: ele mostra o endereço (ex.: `http://192.168.0.10:3000`) e um QR code. O mesmo QR fica em Configurações › Abrir no celular. Se não abrir, deixe a rede do Windows como **Privada** e permita o Node.js no firewall.
 
-**Fora de casa.** O link fica público, então primeiro defina uma senha no `.env`:
+**Fora de casa.** Em Configurações › Abrir no celular:
 
-```env
-APP_PASSWORD=uma-senha-forte
-```
+1. Crie um **PIN** (4 a 12 números). A partir daí, todo aparelho novo pede o PIN uma vez (fica conectado por 90 dias).
+2. Clique em **Ligar acesso fora de casa**. Na primeira vez o app baixa o `cloudflared` (do GitHub oficial da Cloudflare) para `data/bin`; depois aparece um link `https://….trycloudflare.com` com QR code. O link muda cada vez que você liga e some quando você desliga ou fecha o app.
 
-Depois rode `fora-de-casa.bat`. Ele instala o `cloudflared` pelo winget na primeira vez, confere se o servidor está mesmo pedindo senha e mostra um link `https://….trycloudflare.com` com QR code. Sem conta e sem configurar roteador; o link muda a cada vez. Com `APP_PASSWORD`, toda página e rota da API exige login (cookie `HttpOnly` de 30 dias, derivado da senha: trocar a senha derruba as sessões), e o login tem limite de tentativas.
+Por baixo: o PIN fica em `data/acesso.json` só como hash (scrypt), com um segredo aleatório que assina os cookies `HttpOnly`; trocar o PIN desconecta todos os aparelhos. O `proxy.ts` bloqueia páginas e API sem sessão, e o login tem limite por IP e trava por 15 min (dobrando a cada vez) depois de 10 erros seguidos, porque um PIN de 4 números tem só 10 mil combinações.
 
 **Como app.** Pelo link https, abra no Chrome do Android › menu › **Instalar app**. O Anki Studio passa a aparecer no **Compartilhar** de outros apps (navegador, YouTube, leitor de PDF). No Wi-Fi (http) o navegador não deixa instalar, mas o site funciona igual.
 
-| Abrir no celular | Tela de senha |
+| Abrir no celular | Tela do PIN |
 | --- | --- |
-| ![Abrir no celular](docs/screenshots/abrir-no-celular.png) | ![Tela de senha](docs/screenshots/entrar.png) |
+| ![Abrir no celular](docs/screenshots/abrir-no-celular.png) | ![Tela do PIN](docs/screenshots/entrar.png) |
 
 ## Deploy
 
@@ -185,11 +184,11 @@ pnpm test:e2e     # Playwright (rode pnpm build antes)
 ```
 src/
 ├── app/                 # páginas e rotas da API (Route Handlers)
-│   ├── api/             # generate, review, route, deck-analysis, weak-spots, tab-prompt, refine, models, check-key, extract, tts, apkg, anki, config, network, auth
-│   ├── entrar/          # tela de senha (quando APP_PASSWORD está definida)
+│   ├── api/             # generate, review, route, deck-analysis, weak-spots, tab-prompt, refine, models, check-key, extract, tts, apkg, anki, config, network, auth, access
+│   ├── entrar/          # tela do PIN
 │   ├── compartilhar/    # destino do "Compartilhar" do celular (Web Share Target)
 │   └── manifest.ts      # app instalável (PWA)
-├── proxy.ts             # exige login quando APP_PASSWORD está definida
+├── proxy.ts             # exige o PIN quando ele foi criado
 ├── components/
 │   ├── app/             # telas do Anki Studio
 │   └── ui/              # componentes shadcn/ui

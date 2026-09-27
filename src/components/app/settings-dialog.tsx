@@ -301,7 +301,7 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
 
           <Section
             title="Abrir no celular"
-            description="Use o Anki Studio no celular: pelo Wi-Fi de casa ou, com senha, de qualquer lugar."
+            description="Use o Anki Studio no celular: pelo Wi-Fi de casa ou, com PIN, de qualquer lugar."
           >
             <PhoneAccess open={open} />
           </Section>

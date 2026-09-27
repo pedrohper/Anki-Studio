@@ -3,8 +3,10 @@
 import type { ZodType, z } from "zod";
 import type { ModelRef, ProviderId } from "@/lib/llm/providers";
 import {
+  type AccessStatus,
   type ApkgRequest,
   type AppConfig,
+  accessStatusSchema,
   appConfigSchema,
   type DeckAnalysisRequest,
   type DeckAnalysisResponse,
@@ -26,7 +28,9 @@ import {
   refineResponseSchema,
   reviewResponseSchema,
   routeResponseSchema,
+  type TunnelSnapshot,
   ttsResponseSchema,
+  tunnelSnapshotSchema,
   type WeakSpotsRequest,
   type WeakSpotsResponse,
   weakSpotsResponseSchema,
@@ -48,8 +52,12 @@ export class ApiRequestError extends Error {
 
 /** A chave vai só no header da requisição do provedor escolhido. */
 async function send(path: string, body?: unknown, apiKey?: string): Promise<Response> {
+  return sendWithMethod(body === undefined ? "GET" : "POST", path, body, apiKey);
+}
+
+async function sendWithMethod(method: string, path: string, body?: unknown, apiKey?: string): Promise<Response> {
   const response = await fetch(path, {
-    method: body === undefined ? "GET" : "POST",
+    method,
     headers: {
       "content-type": "application/json",
       ...(apiKey ? { "x-llm-key": apiKey } : {}),
@@ -92,9 +100,21 @@ export const api = {
   config: async (): Promise<AppConfig> => appConfigSchema.parse(await (await send("/api/config")).json()),
   /** Endereços do PC na rede Wi-Fi, para abrir no celular. */
   network: async () => lanAddressesSchema.parse(await (await send("/api/network")).json()).addresses,
-  login: async (password: string): Promise<void> => {
-    await send("/api/auth/login", { password });
+  login: async (pin: string): Promise<void> => {
+    await send("/api/auth/login", { pin });
   },
+  /** PIN e acesso fora de casa. */
+  access: async (): Promise<AccessStatus> => accessStatusSchema.parse(await (await send("/api/access")).json()),
+  savePin: async (pin: string, currentPin?: string): Promise<void> => {
+    await send("/api/access/pin", { pin, currentPin });
+  },
+  removePin: async (currentPin: string): Promise<void> => {
+    await sendWithMethod("DELETE", "/api/access/pin", { currentPin });
+  },
+  setTunnel: async (on: boolean): Promise<TunnelSnapshot> =>
+    tunnelSnapshotSchema.parse(
+      ((await (await send("/api/access/tunnel", { on })).json()) as { tunnel: unknown }).tunnel,
+    ),
   logout: async (): Promise<void> => {
     await send("/api/auth/logout", {});
   },

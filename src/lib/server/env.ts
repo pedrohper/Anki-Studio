@@ -33,8 +33,6 @@ const envSchema = z.object({
   TTS_VOICE: z.string().trim().default("en-US-ChristopherNeural"),
   /** Requisições por minuto por IP nas rotas que custam dinheiro ou rede. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(20),
-  /** Senha do app. Obrigatória para abrir fora de casa (túnel): sem ela, ninguém entra. */
-  APP_PASSWORD: z.string().trim().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

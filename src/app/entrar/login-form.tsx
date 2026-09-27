@@ -15,10 +15,10 @@ function returnPath(): string {
   return value;
 }
 
-/** Tela de senha: aparece quando o app está protegido (APP_PASSWORD no .env). */
+/** Tela do PIN: aparece quando você criou um PIN nas Configurações. */
 export function LoginForm() {
   const id = useId();
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -27,10 +27,11 @@ export function LoginForm() {
     setPending(true);
     setError("");
     try {
-      await api.login(password);
+      await api.login(pin);
       window.location.replace(returnPath());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não deu para entrar.");
+      setPin("");
       setPending(false);
     }
   };
@@ -40,19 +41,23 @@ export function LoginForm() {
       <Logo />
       <div className="grid gap-1">
         <h1 className="flex items-center gap-2 font-semibold text-lg">
-          <LockIcon className="size-4 text-primary" /> Este Anki Studio é protegido
+          <LockIcon className="size-4 text-primary" /> Digite o seu PIN
         </h1>
-        <p className="text-muted-foreground text-sm">Digite a senha definida em APP_PASSWORD no PC.</p>
+        <p className="text-muted-foreground text-sm">O mesmo PIN que você criou nas Configurações do Anki Studio.</p>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${id}-password`}>Senha</Label>
+        <Label htmlFor={`${id}-pin`}>PIN</Label>
         <Input
-          id={`${id}-password`}
+          id={`${id}-pin`}
           type="password"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={12}
           autoComplete="current-password"
+          className="text-center text-lg tracking-[0.5em]"
           autoFocus
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          value={pin}
+          onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))}
           aria-invalid={Boolean(error)}
         />
         {error && (
@@ -61,10 +66,10 @@ export function LoginForm() {
           </p>
         )}
       </div>
-      <Button type="submit" disabled={pending || !password}>
+      <Button type="submit" disabled={pending || pin.length < 4}>
         {pending && <Loader2Icon className="animate-spin" />} Entrar
       </Button>
-      <p className="text-muted-foreground text-xs">Você continua conectado neste aparelho por 30 dias.</p>
+      <p className="text-muted-foreground text-xs">Este aparelho fica conectado por 90 dias.</p>
     </form>
   );
 }
