@@ -77,7 +77,7 @@ export async function safeFetchText(raw: string, { maxBytes = 3_000_000, timeout
       redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
       headers: {
-        "user-agent": "Mozilla/5.0 (compatible; AnkiStudio/1.0; +https://github.com/pedrohper/Automacao-Anki)",
+        "user-agent": "Mozilla/5.0 (compatible; AnkiStudio/1.0; +https://github.com/pedrohper/Anki-Studio)",
         accept: "text/html,text/plain;q=0.9,*/*;q=0.5",
       },
     }).catch(() => {

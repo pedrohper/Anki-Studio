@@ -163,7 +163,7 @@ export async function sendReminder(message: ReminderMessage): Promise<{ sent: nu
   const current = readReminder();
   if (!current.vapid || current.devices.length === 0) return { sent: 0, removed: 0 };
   webpush.setVapidDetails(
-    "https://github.com/pedrohper/Automacao-Anki",
+    "https://github.com/pedrohper/Anki-Studio",
     current.vapid.publicKey,
     current.vapid.privateKey,
   );

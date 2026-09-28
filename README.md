@@ -2,7 +2,7 @@
 
 # Anki Studio
 
-[![CI](https://github.com/pedrohper/Automacao-Anki/actions/workflows/ci.yml/badge.svg)](https://github.com/pedrohper/Automacao-Anki/actions/workflows/ci.yml)
+[![CI](https://github.com/pedrohper/Anki-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/pedrohper/Anki-Studio/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 ![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green)
@@ -104,8 +104,8 @@ Next.js 16 (App Router, Route Handlers) · React 19 · TypeScript estrito · Zod
 Pré-requisitos: **Node.js 22+** e **pnpm** (`npm i -g pnpm`).
 
 ```bash
-git clone https://github.com/pedrohper/Automacao-Anki.git
-cd Automacao-Anki
+git clone https://github.com/pedrohper/Anki-Studio.git
+cd Anki-Studio
 pnpm install
 cp .env.example .env.local   # no Windows: copy .env.example .env.local
 ```
