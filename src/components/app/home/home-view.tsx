@@ -1,6 +1,15 @@
 "use client";
 
-import { BookOpenIcon, FlameIcon, LayersIcon, PlusIcon, RotateCcwIcon, SparklesIcon, TargetIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  FlameIcon,
+  LayersIcon,
+  PlugIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  SparklesIcon,
+  TargetIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,6 +56,7 @@ export function HomeView({
   onRouted,
   onOpenWeakSpots,
   onOpenAchievements,
+  onOpenAnkiHelp,
   onImportDecks,
   onOpenSettings,
 }: {
@@ -54,6 +64,7 @@ export function HomeView({
   onRouted: (tabId: string, draft: GenerationDraft) => void;
   onOpenWeakSpots: () => void;
   onOpenAchievements: () => void;
+  onOpenAnkiHelp: () => void;
   onImportDecks: () => void;
   onOpenSettings: () => void;
 }) {
@@ -125,6 +136,24 @@ export function HomeView({
           </div>
         )}
       </header>
+
+      {anki && !connected && (
+        <div
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm"
+          data-testid="anki-connect-banner"
+        >
+          <PlugIcon className="size-5 text-amber-600 dark:text-amber-400" />
+          <p className="min-w-0 flex-1">
+            <span className="block font-medium">Seu Anki ainda não está conectado</span>
+            <span className="text-muted-foreground">
+              Instale o complemento AnkiConnect (uma vez só) para mandar cards direto para os seus baralhos.
+            </span>
+          </p>
+          <Button size="sm" onClick={onOpenAnkiHelp}>
+            Conectar o Anki (2 min)
+          </Button>
+        </div>
+      )}
 
       {tabs.length > 0 && <QuickCapture tabs={tabs} onRouted={onRouted} />}
 

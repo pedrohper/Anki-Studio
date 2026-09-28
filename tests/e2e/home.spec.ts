@@ -88,3 +88,17 @@ test("configurações: criar PIN para o acesso fora de casa", async ({ page }) =
   await page.getByRole("tab", { name: "Celular" }).click();
   await expect(page.getByTestId("create-pin")).toBeVisible();
 });
+
+test("sem Anki: aviso na Início abre o passo a passo do AnkiConnect", async ({ page }) => {
+  await mockBackend(page, { anki: false });
+  await page.goto("/");
+  await expect(page.getByTestId("anki-status")).toContainText("Anki desconectado");
+  await page
+    .getByTestId("anki-connect-banner")
+    .getByRole("button", { name: /Conectar o Anki/ })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Conectar o Anki em 2 minutos" });
+  await expect(dialog.getByTestId("anki-setup-guide")).toContainText("Obter complementos");
+  await expect(dialog.getByText("2055492159").first()).toBeVisible();
+  await expect(dialog.getByTestId("anki-live-check")).toContainText("Esperando o Anki");
+});

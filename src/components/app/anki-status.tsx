@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAnkiStatus } from "@/hooks/use-studio";
 import { cn } from "@/lib/utils";
 
-export function AnkiStatus({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function AnkiStatus({ onOpenHelp }: { onOpenHelp: () => void }) {
   const { data, isPending, refetch, isFetching } = useAnkiStatus();
   const connected = data?.connected ?? false;
   const label = isPending
@@ -21,7 +21,7 @@ export function AnkiStatus({ onOpenSettings }: { onOpenSettings: () => void }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => (connected ? refetch() : onOpenSettings())}
+            onClick={() => (connected ? refetch() : onOpenHelp())}
             aria-label={label}
             data-testid="anki-status"
           />
@@ -43,7 +43,7 @@ export function AnkiStatus({ onOpenSettings }: { onOpenSettings: () => void }) {
       <TooltipContent>
         {connected
           ? "Clique para atualizar a lista de baralhos."
-          : "Abra o Anki Desktop com o AnkiConnect. Clique para ver como conectar. Sem Anki, você ainda pode baixar um .apkg."}
+          : "Clique para ver o passo a passo de como conectar o Anki. Sem Anki, você ainda pode baixar um .apkg."}
       </TooltipContent>
     </Tooltip>
   );

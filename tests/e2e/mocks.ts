@@ -34,7 +34,7 @@ const PROVIDERS = ["deepseek", "openai", "gemini", "openrouter", "groq", "mistra
 
 export async function mockBackend(
   page: Page,
-  { onboarding = false, serverKey = true, settings = {} as Record<string, unknown> } = {},
+  { onboarding = false, serverKey = true, anki = true, settings = {} as Record<string, unknown> } = {},
 ) {
   const added: unknown[] = [];
   const actions: string[] = [];
@@ -137,6 +137,11 @@ export async function mockBackend(
 
   await page.route("**/api/anki", async (route) => {
     const { action, params } = route.request().postDataJSON() as { action: string; params?: { notes?: unknown[] } };
+    // Anki "fechado": o proxy local não alcança o AnkiConnect.
+    if (!anki) {
+      await route.fulfill({ status: 502, json: { error: { message: "Anki fechado", code: "anki_unreachable" } } });
+      return;
+    }
     const today = new Date();
     const iso = (offset: number) => {
       const day = new Date(today);

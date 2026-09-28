@@ -24,6 +24,7 @@ import type { ReviewState } from "@/lib/review";
 import type { Tab } from "@/lib/schemas/tab";
 import { SITE_LINKS } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { AnkiConnectDialog } from "./anki-connect-dialog";
 import { AnkiStatus } from "./anki-status";
 import { DeckImportDialog } from "./deck-import-dialog";
 import { AchievementsView } from "./game/achievements-view";
@@ -60,6 +61,8 @@ export function Studio() {
   const [reviews, setReviews] = useState<Record<string, ReviewState | undefined>>({});
   const [creating, setCreating] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  /** Passo a passo de como instalar o AnkiConnect. */
+  const [ankiHelpOpen, setAnkiHelpOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [importingDecks, setImportingDecks] = useState(false);
   /** Material mandado da tela Início/Pontos fracos para gerar numa aba. */
@@ -127,7 +130,7 @@ export function Studio() {
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <Logo />
           <div className="ml-auto flex items-center gap-1">
-            <AnkiStatus onOpenSettings={() => setSettingsOpen(true)} />
+            <AnkiStatus onOpenHelp={() => setAnkiHelpOpen(true)} />
             <Button variant="ghost" size="icon" aria-label="Histórico" onClick={() => setHistoryOpen(true)}>
               <HistoryIcon />
             </Button>
@@ -258,6 +261,7 @@ export function Studio() {
               onRouted={sendToTab}
               onOpenWeakSpots={() => selectTab(WEAK)}
               onOpenAchievements={() => selectTab(ACHIEVEMENTS)}
+              onOpenAnkiHelp={() => setAnkiHelpOpen(true)}
               onImportDecks={() => setImportingDecks(true)}
               onOpenSettings={() => setSettingsOpen(true)}
             />
@@ -325,6 +329,7 @@ export function Studio() {
         </div>
       </footer>
 
+      <AnkiConnectDialog open={ankiHelpOpen} onOpenChange={setAnkiHelpOpen} />
       {showOnboarding && <Onboarding onFinish={finishOnboarding} />}
       {isClient && onboardingDone && <GameWatcher />}
       <TabEditorDialog open={creating} onOpenChange={setCreating} onSaved={(tab) => selectTab(tab.id)} />

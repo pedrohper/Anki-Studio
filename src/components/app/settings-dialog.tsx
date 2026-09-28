@@ -274,9 +274,9 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                 Sincronizar com o AnkiWeb depois de enviar (os cards aparecem no celular)
               </Label>
               {!anki?.connected && (
-                <details className="rounded-lg bg-muted/60 p-3 text-sm" open={mode === "direct"}>
-                  <summary className="cursor-pointer font-medium">Como conectar</summary>
-                  <AnkiSetupGuide mode={mode} className="mt-4" />
+                <details className="rounded-lg bg-muted/60 p-3 text-sm" open>
+                  <summary className="cursor-pointer font-medium">Passo a passo: instalar o AnkiConnect</summary>
+                  <AnkiSetupGuide mode={mode} className="mt-4" liveCheck />
                 </details>
               )}
             </Section>
