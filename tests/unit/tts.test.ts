@@ -18,7 +18,7 @@ vi.mock("msedge-tts", async () => {
     format = "";
     async setMetadata(_voice: string, format: string) {
       edge.formats.push(format);
-      if (format === edge.failFormat) throw new Error("formato recusado");
+      if (format === edge.failFormat || edge.failFormat === "*") throw new Error("formato recusado");
       this.format = format;
     }
     toStream(_text: string, options?: { rate?: unknown }) {
@@ -174,5 +174,33 @@ describe("rota /api/tts", () => {
   it("recusa provedor desconhecido", async () => {
     const response = await tts(post({ text: "Hi", voice: { provider: "azure", voice: "x" } }));
     expect(response.status).toBe(400);
+  });
+});
+
+describe("voz reserva", () => {
+  it("tenta os outros provedores com chave e por fim o Edge", async () => {
+    const { fallbackVoices } = await import("@/lib/tts/voices");
+    const keys = (provider: string) => provider === "google" || provider === "openai";
+    expect(fallbackVoices({ provider: "edge", voice: "en-US-JennyNeural" }, keys).map((v) => v.provider)).toEqual([
+      "edge",
+      "google",
+      "openai",
+    ]);
+    expect(fallbackVoices({ provider: "openai", voice: "nova" }, keys)).toEqual([
+      { provider: "openai", voice: "nova" },
+      { provider: "google", voice: "en-US-Chirp3-HD-Aoede" },
+      DEFAULT_TTS_VOICE,
+    ]);
+    expect(fallbackVoices({ provider: "edge", voice: "x" }, () => false)).toEqual([{ provider: "edge", voice: "x" }]);
+  });
+
+  it("explica que o Edge está indisponível em vez de um erro genérico", async () => {
+    edge.failFormat = "*";
+    const response = await tts(post({ text: "Hi", voice: DEFAULT_TTS_VOICE }));
+    edge.failFormat = "";
+    expect(response.status).toBe(502);
+    const { error } = await response.json();
+    expect(error.code).toBe("tts_failed");
+    expect(error.message).toMatch(/Edge está indisponível/);
   });
 });

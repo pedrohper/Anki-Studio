@@ -24,7 +24,11 @@ export async function synthesizeSpeech(text: string, voice: TtsVoiceRef, apiKey?
   } catch (error) {
     if (error instanceof ApiError) throw error;
     console.warn(`[tts:${voice.provider}] falhou:`, error instanceof Error ? error.message : error);
-    throw new ApiError(502, `Não foi possível gerar o áudio com ${name} agora.`, "tts_failed");
+    const message =
+      voice.provider === "edge"
+        ? "A voz grátis do Edge está indisponível agora (o serviço da Microsoft recusou o pedido). Tente mais tarde ou adicione uma chave de Google, OpenAI ou ElevenLabs em Configurações → IA → Vozes do áudio."
+        : `Não foi possível gerar o áudio com ${name} agora. Tente de novo ou escolha outra voz na aba.`;
+    throw new ApiError(502, message, "tts_failed");
   }
 }
 

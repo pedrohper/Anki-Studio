@@ -125,6 +125,19 @@ export function usableVoice(voice: TtsVoiceRef, hasKey: (provider: KeyedTtsProvi
   return DEFAULT_TTS_VOICE;
 }
 
+/**
+ * Ordem de tentativa: a voz escolhida e, se ela falhar, a primeira voz de cada
+ * outro provedor com chave e, por último, a voz grátis do Edge.
+ */
+export function fallbackVoices(voice: TtsVoiceRef, hasKey: (provider: KeyedTtsProviderId) => boolean): TtsVoiceRef[] {
+  const first = usableVoice(voice, hasKey);
+  const others = KEYED_TTS_PROVIDERS.filter((provider) => provider !== first.provider && hasKey(provider)).map(
+    (provider) => ({ provider, voice: TTS_PROVIDERS[provider].voices[0]?.value ?? "" }),
+  );
+  const edge = first.provider === "edge" ? [] : [DEFAULT_TTS_VOICE];
+  return [first, ...others, ...edge];
+}
+
 /** Provedores que aparecem no seletor: o Edge e os que têm chave. */
 export function availableTtsProviders(hasKey: (provider: KeyedTtsProviderId) => boolean): TtsProviderInfo[] {
   return TTS_PROVIDER_LIST.filter((provider) => provider.id === "edge" || hasKey(provider.id));

@@ -40,7 +40,7 @@ import {
 } from "@/lib/schemas/api";
 import { type StudyPlan, studyPlanSchema } from "@/lib/schemas/card";
 import type { TabSettings } from "@/lib/schemas/tab";
-import { type TtsVoiceRef, usableVoice } from "@/lib/tts/voices";
+import { fallbackVoices, type TtsVoiceRef } from "@/lib/tts/voices";
 import { getSettings, keyFor, ttsKeyFor } from "./settings";
 import { recordUsageHeader } from "./usage";
 
@@ -184,14 +184,27 @@ export const api = {
     request("/api/weak-spots", body, weakSpotsResponseSchema, body.llm?.provider),
   extract: (url: string, kind: "url" | "youtube") => request("/api/extract", { url, kind }, extractUrlResponseSchema),
   /** Sem a chave do provedor neste navegador, usa a voz gratuita padrão. */
+  /**
+   * Gera o áudio com a voz escolhida; se o provedor falhar, tenta os outros
+   * provedores com chave e, por fim, a voz grátis do Edge.
+   */
   tts: async (text: string, voice: TtsVoiceRef) => {
     const settings = getSettings();
-    const usable = usableVoice(voice, (provider) => Boolean(ttsKeyFor(provider, settings)));
-    const key = usable.provider === "edge" ? "" : ttsKeyFor(usable.provider, settings);
-    const response = await sendWithMethod("POST", "/api/tts", { text, voice: usable }, undefined, {
-      ...(key ? { "x-tts-key": key } : {}),
-    });
-    return ttsResponseSchema.parse(await response.json());
+    const candidates = fallbackVoices(voice, (provider) => Boolean(ttsKeyFor(provider, settings)));
+    let firstError: unknown;
+    for (const candidate of candidates) {
+      const key = candidate.provider === "edge" ? "" : ttsKeyFor(candidate.provider, settings);
+      try {
+        const response = await sendWithMethod("POST", "/api/tts", { text, voice: candidate }, undefined, {
+          ...(key ? { "x-tts-key": key } : {}),
+        });
+        return ttsResponseSchema.parse(await response.json());
+      } catch (error) {
+        if (error instanceof ApiRequestError && error.code === "offline") throw error;
+        firstError ??= error;
+      }
+    }
+    throw firstError;
   },
   apkg: async (body: ApkgRequest): Promise<Blob> => (await send("/api/apkg", body)).blob(),
 };
