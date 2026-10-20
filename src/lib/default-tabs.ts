@@ -1,4 +1,5 @@
 import type { Tab, TabSettings } from "@/lib/schemas/tab";
+import { DEFAULT_TTS_VOICE } from "@/lib/tts/voices";
 
 /**
  * Abas que já vêm prontas no primeiro acesso. Os prompts foram escritos à mão
@@ -75,7 +76,7 @@ const templates: TemplateTab[] = [
     cardLanguage: "inglês (frente) e português (verso)",
     features: { audio: true, knownVocabulary: true, formulas: false, code: false },
     sources: ["wordlist", "text"],
-    ttsVoice: "en-US-ChristopherNeural",
+    tts: DEFAULT_TTS_VOICE,
     systemPrompt: ENGLISH_PROMPT,
   },
 ];
@@ -123,14 +124,4 @@ export const LANGUAGE_OPTIONS = [
   "espanhol",
   "inglês (frente) e português (verso)",
   "espanhol (frente) e português (verso)",
-];
-
-export const VOICE_OPTIONS = [
-  { value: "en-US-ChristopherNeural", label: "Inglês (EUA) · Christopher" },
-  { value: "en-US-JennyNeural", label: "Inglês (EUA) · Jenny" },
-  { value: "en-GB-RyanNeural", label: "Inglês (Reino Unido) · Ryan" },
-  { value: "en-CA-LiamNeural", label: "Inglês (Canadá) · Liam" },
-  { value: "es-ES-AlvaroNeural", label: "Espanhol (Espanha) · Álvaro" },
-  { value: "pt-BR-AntonioNeural", label: "Português (Brasil) · Antônio" },
-  { value: "fr-FR-HenriNeural", label: "Francês · Henri" },
 ];

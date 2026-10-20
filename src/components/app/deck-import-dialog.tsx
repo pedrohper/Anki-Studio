@@ -28,6 +28,7 @@ import { manualPromptFor } from "@/lib/default-tabs";
 import type { Tab, TabSettings } from "@/lib/schemas/tab";
 import { belongsTo, groupDecks, subdeckLabel } from "@/lib/shared/decks";
 import { createId, nowIso } from "@/lib/shared/id";
+import { DEFAULT_TTS_VOICE } from "@/lib/tts/voices";
 
 type Status = "waiting" | "reading" | "done" | "error";
 
@@ -111,7 +112,7 @@ export function DeckImportDialog({
         }
         const tab: Tab = {
           ...settings,
-          ...(settings.features.audio ? { ttsVoice: "en-US-ChristopherNeural" } : {}),
+          ...(settings.features.audio ? { tts: DEFAULT_TTS_VOICE } : {}),
           id: createId(),
           createdAt: now,
           updatedAt: now,

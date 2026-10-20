@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
 import { DEFAULT_GENERATOR, modelRefSchema, type ProviderId, providerIdSchema } from "@/lib/llm/providers";
+import { type KeyedTtsProviderId, ttsProviderIdSchema } from "@/lib/tts/voices";
 
 /**
  * Preferências do visitante. A chave da DeepSeek só vai para o localStorage
@@ -15,6 +16,8 @@ const settingsSchema = z.object({
   apiKey: z.string().default(""),
   /** Chave de cada provedor de IA. */
   providerKeys: z.partialRecord(providerIdSchema, z.string()).default({}),
+  /** Chave de cada provedor de voz (Google, OpenAI, ElevenLabs). */
+  ttsKeys: z.partialRecord(ttsProviderIdSchema.exclude(["edge"]), z.string()).default({}),
   /** Modelo padrão que gera os cards. */
   generator: modelRefSchema.default(DEFAULT_GENERATOR),
   /** Modelo padrão que revisa os cards (null = sem revisão). */
@@ -66,11 +69,12 @@ function load(): Settings {
     const raw = safeGet(() => localStorage, STORAGE_KEY);
     const parsed = settingsSchema.parse(raw ? JSON.parse(raw) : {});
     const session = readSessionKeys();
-    const providerKeys = parsed.rememberKey ? parsed.providerKeys : session;
+    const providerKeys = parsed.rememberKey ? parsed.providerKeys : session.providerKeys;
+    const ttsKeys = parsed.rememberKey ? parsed.ttsKeys : session.ttsKeys;
     // Migração da primeira versão, que só tinha a chave da DeepSeek.
     const legacy = parsed.rememberKey ? parsed.apiKey : (safeGet(() => sessionStorage, LEGACY_SESSION_KEY) ?? "");
     if (legacy && !providerKeys.deepseek) providerKeys.deepseek = legacy;
-    current = { ...parsed, apiKey: "", providerKeys };
+    current = { ...parsed, apiKey: "", providerKeys, ttsKeys };
   } catch {
     current = DEFAULTS;
   }
@@ -81,20 +85,36 @@ export function getSettings(): Settings {
   return load();
 }
 
-function readSessionKeys(): Settings["providerKeys"] {
+const sessionKeysSchema = z.object({
+  providerKeys: settingsSchema.shape.providerKeys,
+  ttsKeys: settingsSchema.shape.ttsKeys,
+});
+
+function readSessionKeys(): Pick<Settings, "providerKeys" | "ttsKeys"> {
   try {
     const raw = safeGet(() => sessionStorage, SESSION_KEY);
-    return raw ? settingsSchema.shape.providerKeys.parse(JSON.parse(raw)) : {};
+    if (!raw) return { providerKeys: {}, ttsKeys: {} };
+    const data: unknown = JSON.parse(raw);
+    // Formato antigo: o objeto era só as chaves de IA.
+    const isLegacy = typeof data === "object" && data !== null && !("providerKeys" in data);
+    return sessionKeysSchema.parse(isLegacy ? { providerKeys: data } : data);
   } catch {
-    return {};
+    return { providerKeys: {}, ttsKeys: {} };
   }
 }
 
 export function updateSettings(patch: Partial<Settings>) {
   current = { ...load(), ...patch };
-  const persisted = { ...current, apiKey: "", providerKeys: current.rememberKey ? current.providerKeys : {} };
+  const remember = current.rememberKey;
+  const persisted = {
+    ...current,
+    apiKey: "",
+    providerKeys: remember ? current.providerKeys : {},
+    ttsKeys: remember ? current.ttsKeys : {},
+  };
   safeSet(() => localStorage, STORAGE_KEY, JSON.stringify(persisted));
-  safeSet(() => sessionStorage, SESSION_KEY, current.rememberKey ? null : JSON.stringify(current.providerKeys));
+  const sessionKeys = { providerKeys: current.providerKeys, ttsKeys: current.ttsKeys };
+  safeSet(() => sessionStorage, SESSION_KEY, remember ? null : JSON.stringify(sessionKeys));
   safeSet(() => sessionStorage, LEGACY_SESSION_KEY, null);
   for (const listener of listeners) listener();
 }
@@ -109,6 +129,19 @@ export function setProviderKey(provider: ProviderId, key: string) {
 
 export function keyFor(provider: ProviderId): string {
   return load().providerKeys[provider] ?? "";
+}
+
+/** Salva (ou apaga, com texto vazio) a chave de um provedor de voz. */
+export function setTtsKey(provider: KeyedTtsProviderId, key: string) {
+  const ttsKeys = { ...load().ttsKeys };
+  if (key.trim()) ttsKeys[provider] = key.trim();
+  else delete ttsKeys[provider];
+  updateSettings({ ttsKeys });
+}
+
+/** Chave de voz; na OpenAI, a chave de IA também serve. */
+export function ttsKeyFor(provider: KeyedTtsProviderId, settings: Settings = load()): string {
+  return settings.ttsKeys[provider] || (provider === "openai" ? (settings.providerKeys.openai ?? "") : "");
 }
 
 function subscribe(listener: () => void) {

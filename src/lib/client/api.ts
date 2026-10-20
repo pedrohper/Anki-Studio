@@ -40,7 +40,8 @@ import {
 } from "@/lib/schemas/api";
 import { type StudyPlan, studyPlanSchema } from "@/lib/schemas/card";
 import type { TabSettings } from "@/lib/schemas/tab";
-import { keyFor } from "./settings";
+import { type TtsVoiceRef, usableVoice } from "@/lib/tts/voices";
+import { getSettings, keyFor, ttsKeyFor } from "./settings";
 import { recordUsageHeader } from "./usage";
 
 /** A tela de custos se inscreve aqui para atualizar quando chega gasto novo. */
@@ -65,12 +66,19 @@ async function send(path: string, body?: unknown, apiKey?: string): Promise<Resp
   return sendWithMethod(body === undefined ? "GET" : "POST", path, body, apiKey);
 }
 
-async function sendWithMethod(method: string, path: string, body?: unknown, apiKey?: string): Promise<Response> {
+async function sendWithMethod(
+  method: string,
+  path: string,
+  body?: unknown,
+  apiKey?: string,
+  extraHeaders?: Record<string, string>,
+): Promise<Response> {
   const response = await fetch(path, {
     method,
     headers: {
       "content-type": "application/json",
       ...(apiKey ? { "x-llm-key": apiKey } : {}),
+      ...extraHeaders,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   }).catch(() => {
@@ -175,6 +183,15 @@ export const api = {
   weakSpots: (body: WeakSpotsRequest): Promise<WeakSpotsResponse> =>
     request("/api/weak-spots", body, weakSpotsResponseSchema, body.llm?.provider),
   extract: (url: string, kind: "url" | "youtube") => request("/api/extract", { url, kind }, extractUrlResponseSchema),
-  tts: (text: string, voice?: string) => request("/api/tts", { text, voice }, ttsResponseSchema),
+  /** Sem a chave do provedor neste navegador, usa a voz gratuita padrão. */
+  tts: async (text: string, voice: TtsVoiceRef) => {
+    const settings = getSettings();
+    const usable = usableVoice(voice, (provider) => Boolean(ttsKeyFor(provider, settings)));
+    const key = usable.provider === "edge" ? "" : ttsKeyFor(usable.provider, settings);
+    const response = await sendWithMethod("POST", "/api/tts", { text, voice: usable }, undefined, {
+      ...(key ? { "x-tts-key": key } : {}),
+    });
+    return ttsResponseSchema.parse(await response.json());
+  },
   apkg: async (body: ApkgRequest): Promise<Blob> => (await send("/api/apkg", body)).blob(),
 };

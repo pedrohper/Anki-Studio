@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { modelRefSchema, providerIdSchema } from "@/lib/llm/providers";
+import { ttsVoiceRefSchema } from "@/lib/tts/voices";
 import { cardTypeSchema, tabForGenerationSchema, tabSettingsSchema } from "./tab";
 
 export const MAX_MATERIAL_CHARS = 160_000;
@@ -76,8 +77,10 @@ export type ExtractUrlResponse = z.infer<typeof extractUrlResponseSchema>;
 
 export const ttsRequestSchema = z.object({
   text: z.string().trim().min(1).max(600),
-  voice: z.string().trim().max(80).optional(),
+  /** Texto legado (voz do Edge) ou provedor + voz. */
+  voice: z.union([z.string().trim().max(80), ttsVoiceRefSchema]).optional(),
 });
+export type TtsRequest = z.infer<typeof ttsRequestSchema>;
 export const ttsResponseSchema = z.object({ audioBase64: z.string(), mimeType: z.string() });
 
 export const apkgRequestSchema = z.object({

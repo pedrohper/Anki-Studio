@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAnkiStatus, useEffectiveModels, useHasAiAccess, useSaveTab } from "@/hooks/use-studio";
 import { api } from "@/lib/client/api";
-import { EMPTY_TAB_SETTINGS, LANGUAGE_OPTIONS, manualPromptFor, VOICE_OPTIONS } from "@/lib/default-tabs";
+import { EMPTY_TAB_SETTINGS, LANGUAGE_OPTIONS, manualPromptFor } from "@/lib/default-tabs";
 import {
   CARD_TYPE_LABELS,
   CARD_TYPES,
@@ -34,7 +34,9 @@ import {
   tabSettingsSchema,
 } from "@/lib/schemas/tab";
 import { createId, nowIso } from "@/lib/shared/id";
+import { tabVoice } from "@/lib/tts/voices";
 import { TabModelsFields } from "./llm/tab-models-fields";
+import { VoicePicker } from "./voice-picker";
 
 type Step = "settings" | "prompt";
 
@@ -291,21 +293,10 @@ export function TabEditorDialog({
             </fieldset>
 
             {settings.features.audio && (
-              <div className="grid gap-1.5">
-                <Label htmlFor={`${formId}-voice`}>Voz do áudio</Label>
-                <select
-                  id={`${formId}-voice`}
-                  className="h-8 rounded-lg border bg-background px-2 text-sm"
-                  value={settings.ttsVoice ?? VOICE_OPTIONS[0]?.value}
-                  onChange={(event) => update("ttsVoice", event.target.value)}
-                >
-                  {VOICE_OPTIONS.map((voice) => (
-                    <option key={voice.value} value={voice.value}>
-                      {voice.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <VoicePicker
+                value={tabVoice(settings)}
+                onChange={(voice) => setSettings((current) => ({ ...current, tts: voice, ttsVoice: undefined }))}
+              />
             )}
             <TabModelsFields value={settings.llm} onChange={(llm) => update("llm", llm)} />
 

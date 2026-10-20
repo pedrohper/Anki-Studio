@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { tabLlmSchema } from "@/lib/llm/providers";
+import { ttsVoiceRefSchema } from "@/lib/tts/voices";
 
 /**
  * Uma "aba" é um estúdio de estudo criado pela pessoa: ela descreve o objetivo,
@@ -73,7 +74,10 @@ export const tabSettingsSchema = z.object({
   cardLanguage: z.string().trim().min(2).max(40),
   features: tabFeaturesSchema,
   sources: z.array(sourceKindSchema).min(1, "Escolha pelo menos uma fonte."),
+  /** Legado: nome de uma voz do Edge. As abas novas usam `tts`. */
   ttsVoice: z.string().trim().max(80).optional(),
+  /** Provedor e voz do áudio desta aba. */
+  tts: ttsVoiceRefSchema.optional(),
   /** Modelos desta aba; vazio herda o padrão das Configurações. */
   llm: tabLlmSchema.optional(),
 });

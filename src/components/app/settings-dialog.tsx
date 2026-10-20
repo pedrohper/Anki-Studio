@@ -23,6 +23,7 @@ import { ModelPicker } from "./llm/model-picker";
 import { CostMeter, ProviderFacts } from "./llm/provider-facts";
 import { PhoneAccess } from "./phone-access";
 import { ReminderSettings } from "./reminder-settings";
+import { TtsKeys } from "./tts-keys";
 import { UsagePanel } from "./usage-panel";
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
@@ -223,6 +224,15 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                 />
                 Lembrar as chaves neste navegador
               </Label>
+            </Section>
+
+            <Separator />
+
+            <Section
+              title="Vozes do áudio"
+              description="O Edge é grátis e não precisa de chave. Com a chave de um destes provedores, as vozes dele aparecem no seletor de voz de cada aba."
+            >
+              <TtsKeys />
             </Section>
 
             <Separator />

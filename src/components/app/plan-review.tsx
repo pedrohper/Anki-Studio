@@ -21,6 +21,7 @@ import type { HistoryEntry } from "@/lib/schemas/storage";
 import type { Tab } from "@/lib/schemas/tab";
 import { createId, nowIso } from "@/lib/shared/id";
 import { toAnkiTag, toMediaFilename } from "@/lib/shared/text";
+import { tabVoice } from "@/lib/tts/voices";
 import { CardItem } from "./card-item";
 import { ReviewerPanel } from "./reviewer-panel";
 
@@ -57,7 +58,7 @@ export function PlanReview({
     if (!tab.features.audio || !text) return undefined;
     const cached = audioCache.current.get(text);
     if (cached) return cached;
-    const { audioBase64 } = await api.tts(text, tab.ttsVoice);
+    const { audioBase64 } = await api.tts(text, tabVoice(tab));
     const audio = {
       filename: toMediaFilename(`${text.slice(0, 30)}_${item.card.id.slice(0, 6)}`),
       base64: audioBase64,

@@ -30,7 +30,8 @@ const envSchema = z.object({
   /** Só ligue quando rodar localmente: a API repassa chamadas ao AnkiConnect. */
   ANKI_PROXY_ENABLED: booleanFlag,
   ANKI_CONNECT_URL: z.url().default("http://127.0.0.1:8765"),
-  TTS_VOICE: z.string().trim().default("en-US-ChristopherNeural"),
+  /** Voz do Edge usada quando o pedido não diz qual. */
+  TTS_VOICE: z.string().trim().default("en-US-AvaMultilingualNeural"),
   /** Requisições por minuto por IP nas rotas que custam dinheiro ou rede. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(20),
 });
